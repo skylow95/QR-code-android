@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">QRCodeApp</string>
     <string name="facebook_app_id">220462511780235</string>
+    <string name="qr_code_button">QR reader</string>
 </resources>

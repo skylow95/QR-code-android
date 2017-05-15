@@ -3,10 +3,9 @@ package com.example.bogdan.qrcodeapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.support.v7.app.AppCompatActivity;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.facebook.CallbackManager;
@@ -16,12 +15,26 @@ import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.google.zxing.Result;
 
-public class MainActivity extends FragmentActivity {
+import butterknife.Bind;
+import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
-    private LoginButton loginButton;
+public class MainActivity extends FragmentActivity implements ZXingScannerView.ResultHandler{
 
-    private TextView textView;
+    @Bind(R.id.login_button)
+    LoginButton loginButton;
+
+    @Bind(R.id.info)
+    TextView textView;
+
+    @Bind(R.id.scanQrButton)
+    Button qrReaderButton;
+
+    @Bind(R.id.qrScannerLayout)
+    LinearLayout qrScanneLayout;
+
+    private ZXingScannerView mScannerView;
 
     private CallbackManager callbackManager;
 
@@ -31,8 +44,7 @@ public class MainActivity extends FragmentActivity {
         FacebookSdk.sdkInitialize(getApplicationContext());
         setContentView(R.layout.activity_main);
         callbackManager = CallbackManager.Factory.create();
-        textView = (TextView) findViewById(R.id.info);
-        loginButton = (LoginButton) findViewById(R.id.login_button);
+
         LoginManager.getInstance().registerCallback(callbackManager,
                 new FacebookCallback<LoginResult>() {
                     @Override
@@ -44,6 +56,7 @@ public class MainActivity extends FragmentActivity {
                                         "Auth Token: "
                                         + loginResult.getAccessToken().getToken()
                         );
+                        qrReaderButton.setVisibility(View.VISIBLE);
                     }
 
                     @Override
@@ -62,5 +75,57 @@ public class MainActivity extends FragmentActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         callbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mScannerView != null) {
+            mScannerView.stopCamera();
+        }
+    }
+
+    public void performQrScanner(View view) {
+        qrScanneLayout.setVisibility(View.VISIBLE);
+        mScannerView = new ZXingScannerView(this);   // Programmatically initialize the scanner view
+
+        qrScanneLayout.addView(
+                mScannerView
+        );
+
+        mScannerView.setResultHandler(this); // Register ourselves as a handler for scan results.
+        mScannerView.startCamera();
+    }
+
+    @Override
+    public void handleResult(Result result) {
+        // Do something with the result here
+//        Log.e("handler", rawResult.getText()); // Prints scan results
+//        Log.e("handler", rawResult.getBarcodeFormat().toString()); // Prints the scan format (qrcode)
+//        // show the scanner result into dialog box.
+
+        mScannerView.stopCamera();
+
+//        try {
+//            ServerFacade.sendRegisterUserToQRCode(
+//                    this,
+//                    usernameET.getText().toString(),
+//                    rawResult.getText()
+//            );
+
+            qrScanneLayout.removeView(
+                    mScannerView
+            );
+            qrScanneLayout.setVisibility(View.GONE);
+
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//            Log.e("Main Activity", e.getMessage(), e);
+//            qrScanneLayout.removeView(
+//                    mScannerView
+//            );
+//            qrScanneLayout.setVisibility(View.GONE);
+//        }
+
     }
 }
