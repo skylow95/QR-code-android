@@ -3,11 +3,13 @@ package com.example.bogdan.qrcodeapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.example.bogdan.qrcodeapp.server.facade.ServerFacade;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
@@ -17,10 +19,15 @@ import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.zxing.Result;
 
+import org.json.JSONException;
+
+import java.io.UnsupportedEncodingException;
+
 import butterknife.Bind;
+import butterknife.ButterKnife;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
-public class MainActivity extends FragmentActivity implements ZXingScannerView.ResultHandler{
+public class MainActivity extends FragmentActivity implements ZXingScannerView.ResultHandler {
 
     @Bind(R.id.login_button)
     LoginButton loginButton;
@@ -38,23 +45,27 @@ public class MainActivity extends FragmentActivity implements ZXingScannerView.R
 
     private CallbackManager callbackManager;
 
+    private String accessToken;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         FacebookSdk.sdkInitialize(getApplicationContext());
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
         callbackManager = CallbackManager.Factory.create();
 
         LoginManager.getInstance().registerCallback(callbackManager,
                 new FacebookCallback<LoginResult>() {
                     @Override
                     public void onSuccess(LoginResult loginResult) {
+                        accessToken = loginResult.getAccessToken().getToken();
                         textView.setText(
                                 "User ID: "
                                         + loginResult.getAccessToken().getUserId()
                                         + "\n" +
                                         "Auth Token: "
-                                        + loginResult.getAccessToken().getToken()
+                                        + accessToken
                         );
                         qrReaderButton.setVisibility(View.VISIBLE);
                     }
@@ -82,16 +93,17 @@ public class MainActivity extends FragmentActivity implements ZXingScannerView.R
         super.onPause();
         if (mScannerView != null) {
             mScannerView.stopCamera();
+            loginButton.setVisibility(View.VISIBLE);
+            qrReaderButton.setVisibility(View.VISIBLE);
         }
     }
 
     public void performQrScanner(View view) {
+        loginButton.setVisibility(View.GONE);
         qrScanneLayout.setVisibility(View.VISIBLE);
-        mScannerView = new ZXingScannerView(this);   // Programmatically initialize the scanner view
 
-        qrScanneLayout.addView(
-                mScannerView
-        );
+        mScannerView = new ZXingScannerView(this);   // Programmatically initialize the scanner view
+        setContentView(mScannerView);
 
         mScannerView.setResultHandler(this); // Register ourselves as a handler for scan results.
         mScannerView.startCamera();
@@ -100,32 +112,21 @@ public class MainActivity extends FragmentActivity implements ZXingScannerView.R
     @Override
     public void handleResult(Result result) {
         // Do something with the result here
-//        Log.e("handler", rawResult.getText()); // Prints scan results
-//        Log.e("handler", rawResult.getBarcodeFormat().toString()); // Prints the scan format (qrcode)
-//        // show the scanner result into dialog box.
-
+        Log.e("handler", result.getText()); // Prints scan results
+        Log.e("handler", result.getBarcodeFormat().toString()); // Prints the scan format (qrcode)
+        // show the scanner result into dialog box.
         mScannerView.stopCamera();
-
-//        try {
-//            ServerFacade.sendRegisterUserToQRCode(
-//                    this,
-//                    usernameET.getText().toString(),
-//                    rawResult.getText()
-//            );
-
-            qrScanneLayout.removeView(
-                    mScannerView
-            );
+        try {
+            ServerFacade.sendRegisterUserToQRCode(this, accessToken, result.getText());
             qrScanneLayout.setVisibility(View.GONE);
-
-//        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//            Log.e("Main Activity", e.getMessage(), e);
-//            qrScanneLayout.removeView(
-//                    mScannerView
-//            );
-//            qrScanneLayout.setVisibility(View.GONE);
-//        }
-
+            setContentView(R.layout.activity_main);
+            qrReaderButton.setVisibility(View.VISIBLE);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            Log.e("Main Activity", e.getMessage(), e);
+            qrScanneLayout.setVisibility(View.GONE);
+            setContentView(R.layout.activity_main);
+            qrReaderButton.setVisibility(View.VISIBLE);
+        }
     }
 }

@@ -11,13 +11,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/qrScannerLayout"
-        android:visibility="gone" />
+        android:visibility="gone"></LinearLayout>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/info"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:textSize="18sp" />
 
@@ -26,7 +25,7 @@
         android:text="@string/qr_code_button"
         android:onClick="performQrScanner"
         android:id="@+id/scanQrButton"
-        android:visibility="invisible"
+        android:visibility="visible"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
